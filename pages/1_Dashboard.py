@@ -23,32 +23,30 @@ st.set_page_config(
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/data_season.csv")
+
+    df = pd.read_csv("data/data_season.csv")
+
+    numeric_columns = [
+        "Year",
+        "Area",
+        "Rainfall",
+        "Temperature",
+        "Humidity",
+        "price",
+        "yeilds"
+    ]
+
+    for col in numeric_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(
+                df[col],
+                errors="coerce"
+            )
+
+    return df
+
 
 df = load_data()
-
-# ============================================================
-# CUSTOM CSS
-# ============================================================
-
-st.markdown("""
-<style>
-.main {
-    padding-top: 1rem;
-}
-
-.metric-card {
-    background-color: #f0f2f6;
-    padding: 20px;
-    border-radius: 15px;
-    text-align: center;
-}
-
-h1,h2,h3 {
-    color: #2E8B57;
-}
-</style>
-""", unsafe_allow_html=True)
 
 # ============================================================
 # HEADER
@@ -59,8 +57,8 @@ st.title("🌾 Crop Yield Prediction Dashboard")
 st.markdown("""
 ### Smart Agriculture Analytics Platform
 
-Analyze crop production, rainfall patterns, seasonal performance,
-and predict agricultural yield using Machine Learning.
+Analyze crop production, rainfall patterns,
+seasonal performance and agricultural yield.
 """)
 
 st.divider()
@@ -70,9 +68,23 @@ st.divider()
 # ============================================================
 
 total_records = len(df)
-total_crops = df["Crops"].nunique()
-total_locations = df["Location"].nunique()
-avg_yield = round(df["yeilds"].mean(), 2)
+
+total_crops = (
+    df["Crops"].nunique()
+    if "Crops" in df.columns
+    else 0
+)
+
+total_locations = (
+    df["Location"].nunique()
+    if "Location" in df.columns
+    else 0
+)
+
+avg_yield = round(
+    df["yeilds"].mean(),
+    2
+)
 
 col1, col2, col3, col4 = st.columns(4)
 
@@ -100,11 +112,11 @@ with col4:
         avg_yield
     )
 
-st.divider()
-
 # ============================================================
 # DATASET OVERVIEW
 # ============================================================
+
+st.divider()
 
 st.subheader("📄 Dataset Overview")
 
@@ -112,127 +124,154 @@ c1, c2 = st.columns(2)
 
 with c1:
 
-    st.info(f"Rows : {df.shape[0]}")
-    st.info(f"Columns : {df.shape[1]}")
+    st.info(
+        f"Rows : {df.shape[0]}"
+    )
+
+    st.info(
+        f"Columns : {df.shape[1]}"
+    )
 
 with c2:
 
-    st.info(
-        f"Average Rainfall : {round(df['Rainfall'].mean(),2)}"
+    avg_rainfall = round(
+        df["Rainfall"].mean(),
+        2
+    )
+
+    avg_temperature = round(
+        df["Temperature"].mean(),
+        2
     )
 
     st.info(
-        f"Average Temperature : {round(df['Temperature'].mean(),2)}"
+        f"Average Rainfall : {avg_rainfall}"
+    )
+
+    st.info(
+        f"Average Temperature : {avg_temperature}"
     )
 
 # ============================================================
-# CHARTS ROW 1
+# CROP DISTRIBUTION
 # ============================================================
 
-st.subheader("📊 Crop Analytics")
+st.divider()
 
-col1, col2 = st.columns(2)
+st.subheader("🌾 Crop Distribution")
 
-with col1:
+crop_count = (
+    df["Crops"]
+    .value_counts()
+    .reset_index()
+)
 
-    crop_counts = (
-        df["Crops"]
-        .value_counts()
-        .reset_index()
-    )
+crop_count.columns = [
+    "Crop",
+    "Count"
+]
 
-    crop_counts.columns = [
-        "Crop",
-        "Count"
-    ]
+fig = px.bar(
+    crop_count,
+    x="Crop",
+    y="Count",
+    title="Crop Distribution"
+)
 
-    fig = px.bar(
-        crop_counts,
-        x="Crop",
-        y="Count",
-        title="Crop Distribution"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-with col2:
-
-    season_count = (
-        df["Season"]
-        .value_counts()
-        .reset_index()
-    )
-
-    season_count.columns = [
-        "Season",
-        "Count"
-    ]
-
-    fig = px.pie(
-        season_count,
-        names="Season",
-        values="Count",
-        title="Season Distribution"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
 # ============================================================
-# CHARTS ROW 2
+# SEASON DISTRIBUTION
 # ============================================================
 
-st.subheader("🌦 Environmental Analysis")
+st.divider()
 
-col1, col2 = st.columns(2)
+st.subheader("📅 Season Distribution")
 
-with col1:
+season_count = (
+    df["Season"]
+    .value_counts()
+    .reset_index()
+)
 
-    fig = px.scatter(
-        df,
-        x="Rainfall",
-        y="yeilds",
-        color="Season",
-        hover_data=["Crops"],
-        title="Rainfall vs Yield"
-    )
+season_count.columns = [
+    "Season",
+    "Count"
+]
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+fig = px.pie(
+    season_count,
+    names="Season",
+    values="Count",
+    title="Season Distribution"
+)
 
-with col2:
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
-    fig = px.scatter(
-        df,
-        x="Temperature",
-        y="yeilds",
-        color="Season",
-        hover_data=["Location"],
-        title="Temperature vs Yield"
-    )
+# ============================================================
+# RAINFALL VS YIELD
+# ============================================================
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+st.divider()
+
+st.subheader("🌧 Rainfall vs Yield")
+
+fig = px.scatter(
+    df,
+    x="Rainfall",
+    y="yeilds",
+    color="Season",
+    hover_data=["Crops"],
+    title="Rainfall vs Yield"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
+
+# ============================================================
+# TEMPERATURE VS YIELD
+# ============================================================
+
+st.divider()
+
+st.subheader("🌡 Temperature vs Yield")
+
+fig = px.scatter(
+    df,
+    x="Temperature",
+    y="yeilds",
+    color="Season",
+    hover_data=["Location"],
+    title="Temperature vs Yield"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
 
 # ============================================================
 # TOP CROPS
 # ============================================================
 
-st.subheader("🏆 Top Crops by Average Yield")
+st.divider()
+
+st.subheader("🏆 Top Crops By Yield")
 
 top_crops = (
     df.groupby("Crops")["yeilds"]
     .mean()
-    .sort_values(ascending=False)
+    .sort_values(
+        ascending=False
+    )
     .head(10)
     .reset_index()
 )
@@ -242,7 +281,7 @@ fig = px.bar(
     x="Crops",
     y="yeilds",
     color="yeilds",
-    title="Top 10 Crops"
+    title="Top Crops By Yield"
 )
 
 st.plotly_chart(
@@ -251,25 +290,29 @@ st.plotly_chart(
 )
 
 # ============================================================
-# LOCATION PERFORMANCE
+# TOP LOCATIONS
 # ============================================================
 
-st.subheader("📍 Location Performance")
+st.divider()
 
-location_yield = (
+st.subheader("📍 Top Locations")
+
+top_locations = (
     df.groupby("Location")["yeilds"]
     .mean()
-    .sort_values(ascending=False)
+    .sort_values(
+        ascending=False
+    )
     .head(10)
     .reset_index()
 )
 
 fig = px.bar(
-    location_yield,
+    top_locations,
     x="Location",
     y="yeilds",
     color="yeilds",
-    title="Top Locations by Yield"
+    title="Top Locations By Yield"
 )
 
 st.plotly_chart(
@@ -281,9 +324,11 @@ st.plotly_chart(
 # CORRELATION HEATMAP
 # ============================================================
 
-st.subheader("🔥 Correlation Analysis")
+st.divider()
 
-numerical_cols = [
+st.subheader("🔥 Correlation Heatmap")
+
+numeric_cols = [
     "Area",
     "Rainfall",
     "Temperature",
@@ -292,13 +337,13 @@ numerical_cols = [
     "yeilds"
 ]
 
-corr = df[numerical_cols].corr()
+corr = df[numeric_cols].corr()
 
 fig = px.imshow(
     corr,
     text_auto=True,
     aspect="auto",
-    title="Feature Correlation Heatmap"
+    title="Feature Correlation Matrix"
 )
 
 st.plotly_chart(
@@ -307,8 +352,10 @@ st.plotly_chart(
 )
 
 # ============================================================
-# INSIGHTS SECTION
+# KEY INSIGHTS
 # ============================================================
+
+st.divider()
 
 st.subheader("💡 Key Insights")
 
@@ -330,19 +377,19 @@ best_season = (
     .idxmax()
 )
 
-col1, col2, col3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with col1:
+with c1:
     st.success(
         f"🌾 Best Crop: {best_crop}"
     )
 
-with col2:
+with c2:
     st.success(
         f"📍 Best Location: {best_location}"
     )
 
-with col3:
+with c3:
     st.success(
         f"📅 Best Season: {best_season}"
     )
@@ -351,7 +398,9 @@ with col3:
 # DATA PREVIEW
 # ============================================================
 
-st.subheader("📋 Dataset Preview")
+st.divider()
+
+st.subheader("📄 Dataset Preview")
 
 st.dataframe(
     df.head(20),
@@ -380,8 +429,8 @@ st.markdown("---")
 st.markdown(
     """
     <center>
-        <h4>🌱 Crop Yield Prediction & Analytics Platform</h4>
-        <p>Built with Streamlit, Plotly, Pandas & Machine Learning</p>
+    <h4>🌱 Crop Yield Prediction & Analytics Platform</h4>
+    <p>Built using Python, Streamlit, Plotly and Machine Learning</p>
     </center>
     """,
     unsafe_allow_html=True
