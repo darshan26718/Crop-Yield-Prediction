@@ -15,3 +15,4 @@ Year,Location,Area,Rainfall,Temperature,Soil type,Irrigation,Humidity,Crops,pric
 2024,Mysore,145,850,28,Clay,Sprinkler,72,Wheat,2450,Rabi,84
 2024,Bangalore,110,710,29,Sandy,Drip,65,Maize,2000,Kharif,75
 2024,Hassan,180,1020,25,Loamy,Drip,82,Rice,2900,Kharif,100
+Year,Location,Area,Rainfall,Temperature,Soil type,Irrigation,Humidity,Crops,price,Season,yeilds
