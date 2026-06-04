@@ -1,11 +1,17 @@
+# ============================================================
+# pages/2_Prediction.py
+# Crop Yield Prediction Page
+# ============================================================
+
 import streamlit as st
 import pandas as pd
-import joblib
 import numpy as np
 
-# --------------------------------------------------
+from model.train_model import train_model
+
+# ============================================================
 # PAGE CONFIG
-# --------------------------------------------------
+# ============================================================
 
 st.set_page_config(
     page_title="Crop Yield Prediction",
@@ -13,19 +19,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# --------------------------------------------------
-# LOAD MODEL
-# --------------------------------------------------
-
-@st.cache_resource
-def load_model():
-    return joblib.load("model/crop_yield_model.pkl")
-
-model = load_model()
-
-# --------------------------------------------------
+# ============================================================
 # LOAD DATA
-# --------------------------------------------------
+# ============================================================
 
 @st.cache_data
 def load_data():
@@ -33,9 +29,19 @@ def load_data():
 
 df = load_data()
 
-# --------------------------------------------------
+# ============================================================
+# LOAD MODEL
+# ============================================================
+
+@st.cache_resource
+def load_model():
+    return train_model()
+
+model = load_model()
+
+# ============================================================
 # HEADER
-# --------------------------------------------------
+# ============================================================
 
 st.title("🌾 Crop Yield Prediction")
 
@@ -46,9 +52,11 @@ environmental and agricultural factors.
 
 st.divider()
 
-# --------------------------------------------------
-# INPUT SECTION
-# --------------------------------------------------
+# ============================================================
+# INPUT FORM
+# ============================================================
+
+st.subheader("📋 Enter Crop Details")
 
 col1, col2 = st.columns(2)
 
@@ -67,21 +75,21 @@ with col1:
     )
 
     area = st.number_input(
-        "Area",
-        min_value=1.0,
+        "Area (Acres)",
+        min_value=0.0,
         value=100.0
     )
 
     rainfall = st.number_input(
-        "Rainfall",
+        "Rainfall (mm)",
         min_value=0.0,
-        value=800.0
+        value=float(df["Rainfall"].mean())
     )
 
     temperature = st.number_input(
-        "Temperature",
+        "Temperature (°C)",
         min_value=0.0,
-        value=28.0
+        value=float(df["Temperature"].mean())
     )
 
 with col2:
@@ -92,15 +100,15 @@ with col2:
     )
 
     irrigation = st.selectbox(
-        "Irrigation",
+        "Irrigation Type",
         sorted(df["Irrigation"].unique())
     )
 
     humidity = st.number_input(
-        "Humidity",
+        "Humidity (%)",
         min_value=0.0,
         max_value=100.0,
-        value=65.0
+        value=float(df["Humidity"].mean())
     )
 
     crop = st.selectbox(
@@ -109,9 +117,9 @@ with col2:
     )
 
     price = st.number_input(
-        "Price",
+        "Market Price",
         min_value=0.0,
-        value=2000.0
+        value=float(df["price"].mean())
     )
 
     season = st.selectbox(
@@ -121,130 +129,139 @@ with col2:
 
 st.divider()
 
-# --------------------------------------------------
+# ============================================================
 # PREDICTION BUTTON
-# --------------------------------------------------
+# ============================================================
 
 if st.button("🚀 Predict Yield", use_container_width=True):
 
-    input_data = pd.DataFrame({
-        "Year": [year],
-        "Location": [location],
-        "Area": [area],
-        "Rainfall": [rainfall],
-        "Temperature": [temperature],
-        "Soil type": [soil_type],
-        "Irrigation": [irrigation],
-        "Humidity": [humidity],
-        "Crops": [crop],
-        "price": [price],
-        "Season": [season]
-    })
+    input_data = pd.DataFrame([{
+        "Year": year,
+        "Location": location,
+        "Area": area,
+        "Rainfall": rainfall,
+        "Temperature": temperature,
+        "Soil type": soil_type,
+        "Irrigation": irrigation,
+        "Humidity": humidity,
+        "Crops": crop,
+        "price": price,
+        "Season": season
+    }])
 
-    prediction = model.predict(input_data)[0]
+    prediction = model.predict(input_data)
+
+    predicted_yield = round(float(prediction[0]), 2)
 
     st.success(
-        f"🌾 Predicted Crop Yield: {prediction:.2f}"
+        f"🌱 Predicted Crop Yield: {predicted_yield}"
     )
 
     st.balloons()
 
-    st.divider()
-
-    # ----------------------------------------------
-    # INTERPRETATION
-    # ----------------------------------------------
+    # ========================================================
+    # RESULT METRICS
+    # ========================================================
 
     st.subheader("📊 Prediction Summary")
 
-    col1, col2, col3 = st.columns(3)
+    m1, m2, m3 = st.columns(3)
 
-    with col1:
+    with m1:
         st.metric(
             "Predicted Yield",
-            f"{prediction:.2f}"
+            predicted_yield
         )
 
-    with col2:
+    with m2:
         st.metric(
             "Rainfall",
-            f"{rainfall}"
+            rainfall
         )
 
-    with col3:
+    with m3:
         st.metric(
             "Temperature",
-            f"{temperature} °C"
+            temperature
         )
 
-    # ----------------------------------------------
+    # ========================================================
     # YIELD CATEGORY
-    # ----------------------------------------------
+    # ========================================================
 
-    if prediction < 30:
-        st.error("🔴 Low Yield Expected")
+    st.subheader("📈 Yield Assessment")
 
-    elif prediction < 60:
-        st.warning("🟡 Moderate Yield Expected")
+    if predicted_yield >= 80:
+        st.success(
+            "Excellent Yield Expected 🌟"
+        )
+
+    elif predicted_yield >= 60:
+        st.info(
+            "Good Yield Expected 👍"
+        )
+
+    elif predicted_yield >= 40:
+        st.warning(
+            "Moderate Yield Expected ⚠️"
+        )
 
     else:
-        st.success("🟢 High Yield Expected")
+        st.error(
+            "Low Yield Expected ❌"
+        )
 
-    # ----------------------------------------------
-    # INPUT SUMMARY
-    # ----------------------------------------------
+    # ========================================================
+    # VISUALIZATION
+    # ========================================================
 
-    st.subheader("📋 Input Summary")
+    chart_df = pd.DataFrame({
+        "Metric": [
+            "Rainfall",
+            "Temperature",
+            "Humidity",
+            "Price",
+            "Predicted Yield"
+        ],
+        "Value": [
+            rainfall,
+            temperature,
+            humidity,
+            price,
+            predicted_yield
+        ]
+    })
 
-    st.dataframe(
-        input_data,
-        use_container_width=True
+    st.subheader("📉 Prediction Visualization")
+
+    st.bar_chart(
+        chart_df.set_index("Metric")
     )
 
-# --------------------------------------------------
-# INFORMATION SECTION
-# --------------------------------------------------
+# ============================================================
+# DATASET REFERENCE
+# ============================================================
 
 st.divider()
 
-st.subheader("ℹ️ About Prediction")
+st.subheader("📄 Dataset Sample")
 
-st.info("""
-The prediction is generated using a trained Machine Learning model.
+st.dataframe(
+    df.head(20),
+    use_container_width=True
+)
 
-Factors considered:
-
-• Location
-
-• Area
-
-• Rainfall
-
-• Temperature
-
-• Soil Type
-
-• Irrigation Method
-
-• Humidity
-
-• Crop Type
-
-• Market Price
-
-• Season
-""")
-
-# --------------------------------------------------
+# ============================================================
 # FOOTER
-# --------------------------------------------------
+# ============================================================
 
 st.markdown("---")
 
 st.markdown(
     """
     <center>
-    <h4>🌱 Smart Agriculture using AI & Machine Learning</h4>
+        <h4>🌱 Crop Yield Prediction System</h4>
+        <p>Machine Learning • Streamlit • Agriculture Analytics</p>
     </center>
     """,
     unsafe_allow_html=True
