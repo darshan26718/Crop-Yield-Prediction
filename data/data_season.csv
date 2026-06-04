@@ -1,18 +1,1 @@
 Year,Location,Area,Rainfall,Temperature,Soil type,Irrigation,Humidity,Crops,price,Season,yeilds
-2020,Hassan,120,850,28,Loamy,Drip,70,Rice,2500,Kharif,85
-2020,Mysore,100,780,30,Clay,Sprinkler,65,Wheat,2200,Rabi,72
-2021,Bangalore,90,650,Sandy,29,Flood,60,Maize,1800,Kharif,68
-2021,Hassan,150,920,27,Loamy,Drip,75,Rice,2600,Kharif,92
-2021,Tumkur,110,700,31,Black,Flood,58,Millet,1700,Rabi,63
-2022,Mysore,130,810,29,Clay,Sprinkler,68,Wheat,2300,Rabi,78
-2022,Bangalore,95,690,30,Sandy,Drip,62,Maize,1900,Kharif,71
-2022,Hassan,160,980,26,Loamy,Drip,78,Rice,2700,Kharif,96
-2023,Tumkur,105,720,32,Black,Flood,57,Millet,1750,Rabi,65
-2023,Mysore,140,830,28,Clay,Sprinkler,70,Wheat,2400,Rabi,82
-2023,Bangalore,100,700,29,Sandy,Drip,64,Maize,1950,Kharif,73
-2023,Hassan,170,1000,25,Loamy,Drip,80,Rice,2800,Kharif,98
-2024,Tumkur,115,740,31,Black,Flood,60,Millet,1800,Rabi,67
-2024,Mysore,145,850,28,Clay,Sprinkler,72,Wheat,2450,Rabi,84
-2024,Bangalore,110,710,29,Sandy,Drip,65,Maize,2000,Kharif,75
-2024,Hassan,180,1020,25,Loamy,Drip,82,Rice,2900,Kharif,100
-Year,Location,Area,Rainfall,Temperature,Soil type,Irrigation,Humidity,Crops,price,Season,yeilds
