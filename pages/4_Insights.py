@@ -1,29 +1,19 @@
 # ============================================================
 # pages/4_Insights.py
-# Smart Agricultural Insights Dashboard
+# Crop Yield Insights Page
 # ============================================================
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from utils.insights import (
-    get_best_crop,
-    get_best_location,
-    get_best_season,
-    get_top_crops,
-    get_top_locations,
-    get_season_performance,
-    generate_recommendations,
-    generate_full_report
-)
 
 # ============================================================
 # PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
-    page_title="Smart Insights",
-    page_icon="🧠",
+    page_title="Insights",
+    page_icon="💡",
     layout="wide"
 )
 
@@ -33,7 +23,30 @@ st.set_page_config(
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/data_season.csv")
+
+    df = pd.read_csv("data/data_season.csv")
+
+    numeric_columns = [
+        "Year",
+        "Area",
+        "Rainfall",
+        "Temperature",
+        "Humidity",
+        "price",
+        "yeilds"
+    ]
+
+    for col in numeric_columns:
+        if col in df.columns:
+            df[col] = pd.to_numeric(
+                df[col],
+                errors="coerce"
+            )
+
+    df = df.dropna()
+
+    return df
+
 
 df = load_data()
 
@@ -41,144 +54,176 @@ df = load_data()
 # HEADER
 # ============================================================
 
-st.title("🧠 AI Powered Agricultural Insights")
+st.title("💡 Agricultural Insights")
 
 st.markdown("""
-Generate smart recommendations and discover hidden patterns
-from agricultural data using analytics and machine learning.
+Smart insights generated from crop yield,
+weather conditions and agricultural performance.
 """)
 
 st.divider()
 
 # ============================================================
-# SIDEBAR FILTERS
+# FILTERS
 # ============================================================
 
-st.sidebar.header("🔍 Filters")
+col1, col2, col3 = st.columns(3)
 
-selected_location = st.sidebar.multiselect(
-    "Location",
-    options=sorted(df["Location"].unique()),
-    default=sorted(df["Location"].unique())
-)
+with col1:
+    selected_crop = st.selectbox(
+        "Crop",
+        ["All"] + sorted(df["Crops"].unique().tolist())
+    )
 
-selected_crop = st.sidebar.multiselect(
-    "Crop",
-    options=sorted(df["Crops"].unique()),
-    default=sorted(df["Crops"].unique())
-)
+with col2:
+    selected_season = st.selectbox(
+        "Season",
+        ["All"] + sorted(df["Season"].unique().tolist())
+    )
 
-selected_season = st.sidebar.multiselect(
-    "Season",
-    options=sorted(df["Season"].unique()),
-    default=sorted(df["Season"].unique())
-)
+with col3:
+    selected_location = st.selectbox(
+        "Location",
+        ["All"] + sorted(df["Location"].unique().tolist())
+    )
 
-filtered_df = df[
-    (df["Location"].isin(selected_location))
-    &
-    (df["Crops"].isin(selected_crop))
-    &
-    (df["Season"].isin(selected_season))
-]
+filtered_df = df.copy()
+
+if selected_crop != "All":
+    filtered_df = filtered_df[
+        filtered_df["Crops"] == selected_crop
+    ]
+
+if selected_season != "All":
+    filtered_df = filtered_df[
+        filtered_df["Season"] == selected_season
+    ]
+
+if selected_location != "All":
+    filtered_df = filtered_df[
+        filtered_df["Location"] == selected_location
+    ]
 
 # ============================================================
 # KPI SECTION
 # ============================================================
 
-st.subheader("📊 Dataset Overview")
+st.subheader("📊 Key Metrics")
 
-col1, col2, col3, col4 = st.columns(4)
+c1, c2, c3, c4 = st.columns(4)
 
-with col1:
-    st.metric(
-        "Records",
-        len(filtered_df)
-    )
-
-with col2:
-    st.metric(
-        "Locations",
-        filtered_df["Location"].nunique()
-    )
-
-with col3:
-    st.metric(
-        "Crops",
-        filtered_df["Crops"].nunique()
-    )
-
-with col4:
+with c1:
     st.metric(
         "Average Yield",
         round(filtered_df["yeilds"].mean(), 2)
     )
 
-st.divider()
-
-# ============================================================
-# BEST PERFORMERS
-# ============================================================
-
-best_crop, crop_yield = get_best_crop(filtered_df)
-
-best_location, location_yield = get_best_location(filtered_df)
-
-best_season, season_yield = get_best_season(filtered_df)
-
-st.subheader("🏆 Top Performers")
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    st.success(
-        f"""
-        🌾 Best Crop
-        
-        {best_crop}
-        
-        Yield: {crop_yield:.2f}
-        """
-    )
-
 with c2:
-    st.success(
-        f"""
-        📍 Best Location
-        
-        {best_location}
-        
-        Yield: {location_yield:.2f}
-        """
+    st.metric(
+        "Average Rainfall",
+        round(filtered_df["Rainfall"].mean(), 2)
     )
 
 with c3:
-    st.success(
-        f"""
-        📅 Best Season
-        
-        {best_season}
-        
-        Yield: {season_yield:.2f}
-        """
+    st.metric(
+        "Average Temperature",
+        round(filtered_df["Temperature"].mean(), 2)
     )
+
+with c4:
+    st.metric(
+        "Average Humidity",
+        round(filtered_df["Humidity"].mean(), 2)
+    )
+
+# ============================================================
+# BEST CROP
+# ============================================================
 
 st.divider()
 
+st.subheader("🏆 Best Performing Crop")
+
+best_crop = (
+    filtered_df.groupby("Crops")["yeilds"]
+    .mean()
+    .idxmax()
+)
+
+best_crop_yield = (
+    filtered_df.groupby("Crops")["yeilds"]
+    .mean()
+    .max()
+)
+
+st.success(
+    f"Best Crop: {best_crop} "
+    f"(Average Yield: {round(best_crop_yield,2)})"
+)
+
 # ============================================================
-# TOP CROPS
+# BEST LOCATION
 # ============================================================
 
-st.subheader("🌾 Top Crops by Yield")
+best_location = (
+    filtered_df.groupby("Location")["yeilds"]
+    .mean()
+    .idxmax()
+)
 
-top_crops = get_top_crops(filtered_df)
+best_location_yield = (
+    filtered_df.groupby("Location")["yeilds"]
+    .mean()
+    .max()
+)
+
+st.success(
+    f"Best Location: {best_location} "
+    f"(Average Yield: {round(best_location_yield,2)})"
+)
+
+# ============================================================
+# BEST SEASON
+# ============================================================
+
+best_season = (
+    filtered_df.groupby("Season")["yeilds"]
+    .mean()
+    .idxmax()
+)
+
+best_season_yield = (
+    filtered_df.groupby("Season")["yeilds"]
+    .mean()
+    .max()
+)
+
+st.success(
+    f"Best Season: {best_season} "
+    f"(Average Yield: {round(best_season_yield,2)})"
+)
+
+# ============================================================
+# CROP PERFORMANCE
+# ============================================================
+
+st.divider()
+
+st.subheader("🌾 Crop Performance")
+
+crop_performance = (
+    filtered_df.groupby("Crops")["yeilds"]
+    .mean()
+    .sort_values(ascending=False)
+    .reset_index()
+)
 
 fig = px.bar(
-    top_crops,
+    crop_performance,
     x="Crops",
     y="yeilds",
     color="yeilds",
-    title="Top Crops"
+    title="Average Yield by Crop"
 )
 
 st.plotly_chart(
@@ -187,80 +232,48 @@ st.plotly_chart(
 )
 
 # ============================================================
-# TOP LOCATIONS
+# SEASON PERFORMANCE
 # ============================================================
 
-st.subheader("📍 Top Locations by Yield")
+st.subheader("📅 Season Performance")
 
-top_locations = get_top_locations(filtered_df)
+season_performance = (
+    filtered_df.groupby("Season")["yeilds"]
+    .mean()
+    .reset_index()
+)
+
+fig = px.pie(
+    season_performance,
+    names="Season",
+    values="yeilds",
+    title="Season Contribution"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
+
+# ============================================================
+# LOCATION PERFORMANCE
+# ============================================================
+
+st.subheader("📍 Location Performance")
+
+location_performance = (
+    filtered_df.groupby("Location")["yeilds"]
+    .mean()
+    .sort_values(ascending=False)
+    .reset_index()
+)
 
 fig = px.bar(
-    top_locations,
+    location_performance,
     x="Location",
     y="yeilds",
     color="yeilds",
-    title="Top Locations"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
-# ============================================================
-# SEASON ANALYSIS
-# ============================================================
-
-st.subheader("📅 Seasonal Performance")
-
-season_data = get_season_performance(filtered_df)
-
-fig = px.pie(
-    season_data,
-    values="yeilds",
-    names="Season",
-    title="Season-wise Yield Distribution"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
-# ============================================================
-# RAINFALL ANALYSIS
-# ============================================================
-
-st.subheader("🌧 Rainfall Impact")
-
-fig = px.scatter(
-    filtered_df,
-    x="Rainfall",
-    y="yeilds",
-    color="Season",
-    size="Area",
-    hover_data=["Crops"],
-    title="Rainfall vs Yield"
-)
-
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
-
-# ============================================================
-# TEMPERATURE ANALYSIS
-# ============================================================
-
-st.subheader("🌡 Temperature Impact")
-
-fig = px.scatter(
-    filtered_df,
-    x="Temperature",
-    y="yeilds",
-    color="Season",
-    hover_data=["Location"],
-    title="Temperature vs Yield"
+    title="Location-wise Yield"
 )
 
 st.plotly_chart(
@@ -272,38 +285,46 @@ st.plotly_chart(
 # RECOMMENDATIONS
 # ============================================================
 
-st.subheader("🤖 Smart Recommendations")
-
-recommendations = generate_recommendations(
-    filtered_df
-)
-
-for recommendation in recommendations:
-    st.info(recommendation)
-
 st.divider()
 
-# ============================================================
-# FULL INSIGHT REPORT
-# ============================================================
+st.subheader("🧠 Smart Recommendations")
 
-st.subheader("📋 AI Generated Report")
+avg_rainfall = filtered_df["Rainfall"].mean()
+avg_temp = filtered_df["Temperature"].mean()
+avg_humidity = filtered_df["Humidity"].mean()
 
-report = generate_full_report(
-    filtered_df
-)
+recommendations = []
 
-with st.expander(
-    "View Detailed Report"
-):
+if avg_rainfall < 700:
+    recommendations.append(
+        "Increase irrigation in low rainfall regions."
+    )
 
-    st.json(report)
+if avg_temp > 32:
+    recommendations.append(
+        "High temperature detected. Consider heat-resistant crops."
+    )
+
+if avg_humidity < 50:
+    recommendations.append(
+        "Maintain soil moisture using drip irrigation."
+    )
+
+if len(recommendations) == 0:
+    recommendations.append(
+        "Current agricultural conditions appear favorable."
+    )
+
+for rec in recommendations:
+    st.info(rec)
 
 # ============================================================
 # DATA PREVIEW
 # ============================================================
 
-st.subheader("📄 Dataset Preview")
+st.divider()
+
+st.subheader("📋 Dataset Preview")
 
 st.dataframe(
     filtered_df,
@@ -311,20 +332,16 @@ st.dataframe(
 )
 
 # ============================================================
-# DOWNLOAD REPORT
+# DOWNLOAD
 # ============================================================
 
-st.subheader("📥 Export Dataset")
-
-csv = filtered_df.to_csv(
-    index=False
-)
+csv = filtered_df.to_csv(index=False)
 
 st.download_button(
-    label="Download CSV Report",
-    data=csv,
-    file_name="crop_insights_report.csv",
-    mime="text/csv"
+    "📥 Download Insights Data",
+    csv,
+    "insights_data.csv",
+    "text/csv"
 )
 
 # ============================================================
@@ -336,8 +353,8 @@ st.markdown("---")
 st.markdown(
     """
     <center>
-    <h4>🌱 Crop Yield Prediction & Smart Analytics Platform</h4>
-    <p>Built using Python, Machine Learning, Streamlit & Plotly</p>
+    <h4>💡 Agricultural Insights Platform</h4>
+    <p>Powered by Streamlit, Plotly & Machine Learning</p>
     </center>
     """,
     unsafe_allow_html=True
