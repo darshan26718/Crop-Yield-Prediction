@@ -1,11 +1,16 @@
+# ============================================================
+# pages/3_Analytics.py
+# Deep Analytics Dashboard
+# ============================================================
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# --------------------------------------------------
+# ============================================================
 # PAGE CONFIG
-# --------------------------------------------------
+# ============================================================
 
 st.set_page_config(
     page_title="Deep Analytics",
@@ -13,9 +18,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# --------------------------------------------------
+# ============================================================
 # LOAD DATA
-# --------------------------------------------------
+# ============================================================
 
 @st.cache_data
 def load_data():
@@ -23,53 +28,55 @@ def load_data():
 
 df = load_data()
 
-# --------------------------------------------------
+# ============================================================
 # HEADER
-# --------------------------------------------------
+# ============================================================
 
 st.title("📈 Deep Analytics Dashboard")
 
 st.markdown("""
-Explore advanced analytics and visual insights from the agricultural dataset.
-Analyze crop performance, seasonal trends, rainfall impact, temperature effects,
-and feature relationships.
+Analyze agricultural data through interactive charts,
+correlation studies, crop performance metrics,
+seasonal trends, and environmental impact analysis.
 """)
 
 st.divider()
 
-# --------------------------------------------------
+# ============================================================
 # SIDEBAR FILTERS
-# --------------------------------------------------
+# ============================================================
 
 st.sidebar.header("🔍 Analytics Filters")
 
-selected_location = st.sidebar.multiselect(
+locations = st.sidebar.multiselect(
     "Location",
-    options=df["Location"].unique(),
-    default=df["Location"].unique()
+    options=sorted(df["Location"].unique()),
+    default=sorted(df["Location"].unique())
 )
 
-selected_season = st.sidebar.multiselect(
-    "Season",
-    options=df["Season"].unique(),
-    default=df["Season"].unique()
-)
-
-selected_crop = st.sidebar.multiselect(
+crops = st.sidebar.multiselect(
     "Crop",
-    options=df["Crops"].unique(),
-    default=df["Crops"].unique()
+    options=sorted(df["Crops"].unique()),
+    default=sorted(df["Crops"].unique())
+)
+
+seasons = st.sidebar.multiselect(
+    "Season",
+    options=sorted(df["Season"].unique()),
+    default=sorted(df["Season"].unique())
 )
 
 filtered_df = df[
-    (df["Location"].isin(selected_location)) &
-    (df["Season"].isin(selected_season)) &
-    (df["Crops"].isin(selected_crop))
+    (df["Location"].isin(locations))
+    &
+    (df["Crops"].isin(crops))
+    &
+    (df["Season"].isin(seasons))
 ]
 
-# --------------------------------------------------
-# KPI CARDS
-# --------------------------------------------------
+# ============================================================
+# KPI SECTION
+# ============================================================
 
 st.subheader("📊 Analytics Overview")
 
@@ -101,21 +108,21 @@ with col4:
 
 st.divider()
 
-# --------------------------------------------------
+# ============================================================
 # TABS
-# --------------------------------------------------
+# ============================================================
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🌧 Rainfall Analysis",
-    "🌡 Temperature Analysis",
-    "🌾 Crop Analysis",
-    "📅 Seasonal Analysis",
-    "🔥 Correlation Analysis"
+    "🌧 Rainfall",
+    "🌡 Temperature",
+    "🌾 Crops",
+    "📅 Seasons",
+    "🔥 Correlation"
 ])
 
-# --------------------------------------------------
-# TAB 1
-# --------------------------------------------------
+# ============================================================
+# RAINFALL ANALYSIS
+# ============================================================
 
 with tab1:
 
@@ -140,12 +147,17 @@ with tab1:
         filtered_df.groupby("Crops")["Rainfall"]
         .mean()
         .reset_index()
+        .sort_values(
+            by="Rainfall",
+            ascending=False
+        )
     )
 
     fig = px.bar(
         rainfall_crop,
         x="Crops",
         y="Rainfall",
+        color="Rainfall",
         title="Average Rainfall by Crop"
     )
 
@@ -154,19 +166,20 @@ with tab1:
         use_container_width=True
     )
 
-# --------------------------------------------------
-# TAB 2
-# --------------------------------------------------
+# ============================================================
+# TEMPERATURE ANALYSIS
+# ============================================================
 
 with tab2:
 
-    st.subheader("Temperature Impact Analysis")
+    st.subheader("Temperature Impact")
 
     fig = px.scatter(
         filtered_df,
         x="Temperature",
         y="yeilds",
-        color="Crops",
+        color="Season",
+        hover_data=["Location"],
         title="Temperature vs Yield"
     )
 
@@ -188,19 +201,22 @@ with tab2:
         use_container_width=True
     )
 
-# --------------------------------------------------
-# TAB 3
-# --------------------------------------------------
+# ============================================================
+# CROP ANALYSIS
+# ============================================================
 
 with tab3:
 
-    st.subheader("Crop Performance Analysis")
+    st.subheader("Crop Performance")
 
     crop_yield = (
         filtered_df.groupby("Crops")["yeilds"]
         .mean()
         .reset_index()
-        .sort_values(by="yeilds", ascending=False)
+        .sort_values(
+            by="yeilds",
+            ascending=False
+        )
     )
 
     fig = px.bar(
@@ -228,9 +244,9 @@ with tab3:
         use_container_width=True
     )
 
-# --------------------------------------------------
-# TAB 4
-# --------------------------------------------------
+# ============================================================
+# SEASON ANALYSIS
+# ============================================================
 
 with tab4:
 
@@ -267,15 +283,15 @@ with tab4:
         use_container_width=True
     )
 
-# --------------------------------------------------
-# TAB 5
-# --------------------------------------------------
+# ============================================================
+# CORRELATION ANALYSIS
+# ============================================================
 
 with tab5:
 
-    st.subheader("Correlation Heatmap")
+    st.subheader("Correlation Matrix")
 
-    numeric_columns = [
+    numerical_columns = [
         "Area",
         "Rainfall",
         "Temperature",
@@ -284,16 +300,16 @@ with tab5:
         "yeilds"
     ]
 
-    correlation = (
-        filtered_df[numeric_columns]
+    corr = (
+        filtered_df[numerical_columns]
         .corr()
     )
 
     fig = px.imshow(
-        correlation,
+        corr,
         text_auto=True,
         aspect="auto",
-        title="Feature Correlation Matrix"
+        title="Feature Correlation Heatmap"
     )
 
     st.plotly_chart(
@@ -302,23 +318,26 @@ with tab5:
     )
 
     st.dataframe(
-        correlation,
+        corr,
         use_container_width=True
     )
 
-# --------------------------------------------------
+# ============================================================
 # LOCATION ANALYSIS
-# --------------------------------------------------
+# ============================================================
 
 st.divider()
 
-st.subheader("📍 Location Performance Analysis")
+st.subheader("📍 Location Performance")
 
 location_yield = (
     filtered_df.groupby("Location")["yeilds"]
     .mean()
     .reset_index()
-    .sort_values(by="yeilds", ascending=False)
+    .sort_values(
+        by="yeilds",
+        ascending=False
+    )
 )
 
 fig = px.bar(
@@ -334,13 +353,13 @@ st.plotly_chart(
     use_container_width=True
 )
 
-# --------------------------------------------------
+# ============================================================
 # TOP INSIGHTS
-# --------------------------------------------------
+# ============================================================
 
 st.divider()
 
-st.subheader("🏆 Analytics Insights")
+st.subheader("🏆 Key Analytics Insights")
 
 best_crop = (
     filtered_df.groupby("Crops")["yeilds"]
@@ -360,26 +379,26 @@ best_season = (
     .idxmax()
 )
 
-col1, col2, col3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with col1:
+with c1:
     st.success(
         f"🌾 Best Crop: {best_crop}"
     )
 
-with col2:
+with c2:
     st.success(
         f"📍 Best Location: {best_location}"
     )
 
-with col3:
+with c3:
     st.success(
         f"📅 Best Season: {best_season}"
     )
 
-# --------------------------------------------------
+# ============================================================
 # RAW DATA
-# --------------------------------------------------
+# ============================================================
 
 st.divider()
 
@@ -390,17 +409,30 @@ st.dataframe(
     use_container_width=True
 )
 
-# --------------------------------------------------
+# ============================================================
+# DOWNLOAD DATA
+# ============================================================
+
+csv = filtered_df.to_csv(index=False)
+
+st.download_button(
+    label="📥 Download Filtered Dataset",
+    data=csv,
+    file_name="analytics_dataset.csv",
+    mime="text/csv"
+)
+
+# ============================================================
 # FOOTER
-# --------------------------------------------------
+# ============================================================
 
 st.markdown("---")
 
 st.markdown(
     """
     <center>
-    <h4>📊 Advanced Agricultural Analytics Platform</h4>
-    <p>Built with Streamlit, Plotly & Machine Learning</p>
+        <h4>🌱 Crop Yield Prediction Analytics Platform</h4>
+        <p>Built with Streamlit, Plotly & Machine Learning</p>
     </center>
     """,
     unsafe_allow_html=True
