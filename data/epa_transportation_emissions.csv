@@ -1,0 +1,31 @@
+Vehicle_Type,Fuel_Type,Distance_km,Fuel_Consumed_L,CO2_Emission_kg
+Car,Petrol,120,10,23.10
+Car,Petrol,150,12,27.72
+Car,Petrol,200,15,34.65
+Bus,Diesel,300,35,93.80
+Bus,Diesel,450,50,134.00
+Truck,Diesel,600,75,201.00
+Truck,Diesel,750,90,241.20
+Van,Diesel,250,22,58.96
+Van,Diesel,300,28,75.04
+Motorcycle,Petrol,100,4,9.24
+Motorcycle,Petrol,150,6,13.86
+Flight,Jet Fuel,500,120,75.00
+Flight,Jet Fuel,1000,240,150.00
+Flight,Jet Fuel,1500,360,225.00
+Car,Petrol,180,14,32.34
+Car,Petrol,220,16,36.96
+Bus,Diesel,350,40,107.20
+Bus,Diesel,500,55,147.40
+Truck,Diesel,800,100,268.00
+Truck,Diesel,900,110,294.80
+Van,Diesel,280,25,67.00
+Van,Diesel,320,30,80.40
+Motorcycle,Petrol,120,5,11.55
+Motorcycle,Petrol,180,7,16.17
+Flight,Jet Fuel,2000,480,300.00
+Flight,Jet Fuel,2500,600,375.00
+Car,Petrol,260,18,41.58
+Car,Petrol,300,20,46.20
+Bus,Diesel,550,60,160.80
+Truck,Diesel,1000,125,335.00
