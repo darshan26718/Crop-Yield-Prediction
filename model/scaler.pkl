@@ -1,0 +1,47 @@
+# create_scaler.py
+
+import pandas as pd
+import joblib
+
+from sklearn.preprocessing import StandardScaler
+
+# =====================================
+# LOAD DATASET
+# =====================================
+
+df = pd.read_csv("data/maintenance_failure_dataset.csv")
+
+# =====================================
+# TARGET COLUMN
+# =====================================
+
+TARGET_COLUMN = "Failure"
+
+# =====================================
+# FEATURES
+# =====================================
+
+X = df.drop(columns=[TARGET_COLUMN])
+
+# Convert categorical columns if present
+X = pd.get_dummies(X, drop_first=True)
+
+# =====================================
+# CREATE & FIT SCALER
+# =====================================
+
+scaler = StandardScaler()
+
+scaler.fit(X)
+
+# =====================================
+# SAVE SCALER
+# =====================================
+
+joblib.dump(scaler, "models/scaler.pkl")
+
+print("Scaler saved successfully!")
+print("Location: models/scaler.pkl")
+
+print("\nFeatures used:")
+print(X.columns.tolist())
